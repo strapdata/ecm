@@ -1428,8 +1428,8 @@ class Node(object):
         if self.get_cassandra_version() > '3.0' and 'hints_directory' in yaml_text:
             data['hints_directory'] = os.path.join(self.get_path(), 'hints')
 
-        if LooseVersion(self.get_cassandra_version()) >= '3.8':
-            data['cdc_raw_directory'] = os.path.join(self.get_path(), 'cdc_raw')
+        # if LooseVersion(self.get_cassandra_version()) >= '3.8':
+        #     data['cdc_raw_directory'] = os.path.join(self.get_path(), 'cdc_raw')
 
         if self.cluster.partitioner:
             data['partitioner'] = self.cluster.partitioner
