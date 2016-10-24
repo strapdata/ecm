@@ -533,7 +533,7 @@ class Node(object):
     def start(self,
               join_ring=True,
               no_wait=False,
-              verbose=False,
+              verbose=True,
               update_pid=True,
               wait_other_notice=True,
               replace_token=None,
