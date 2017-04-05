@@ -32,19 +32,20 @@ from six.moves import urllib
 DSE_ARCHIVE = "http://downloads.datastax.com/enterprise/dse-%s-bin.tar.gz"
 OPSC_ARCHIVE = "http://downloads.datastax.com/community/opscenter-%s.tar.gz"
 ARCHIVE = "http://archive.apache.org/dist/cassandra"
-GIT_REPO = "http://git-wip-us.apache.org/repos/asf/cassandra.git"
+#GIT_REPO = "http://git-wip-us.apache.org/repos/asf/cassandra.git"
+GIT_REPO="https://github.com/strapdata/elassandra.git"
 GITHUB_TAGS = "https://api.github.com/repos/apache/cassandra/git/refs/tags"
 CCM_CONFIG = ConfigParser.ConfigParser()
 CCM_CONFIG.read(os.path.join(os.path.expanduser("~"), ".ccm", "config"))
 
 
-def setup(version, verbose=False):
+def setup(version, verbose=False, elassandra_version=None):
     binary = True
     fallback = True
 
     if version.startswith('git:'):
-        clone_development(GIT_REPO, version, verbose=verbose)
-        return (version_directory(version), None)
+        clone_development(GIT_REPO, version, verbose=verbose, elassandra_version=elassandra_version)
+        return (elassandra_version_directory(version, elassandra_version), None)
     elif version.startswith('local:'):
         # local: slugs take the form of: "local:/some/path/:somebranch"
         try:
@@ -52,8 +53,8 @@ def setup(version, verbose=False):
         except ValueError:
             raise CCMError("local version ({}) appears to be invalid. Please format as local:/some/path/:somebranch".format(version))
 
-        clone_development(path, version, verbose=verbose)
-        version_dir = version_directory(version)
+        clone_development(path, version, verbose=verbose, elassandra_version=elassandra_version)
+        version_dir = elassandra_version_directory(version, elassandra_version)
 
         if version_dir is None:
             raise CCMError("Path provided in local slug appears invalid ({})".format(path))
@@ -65,8 +66,8 @@ def setup(version, verbose=False):
 
     elif version.startswith('github:'):
         user_name, _ = github_username_and_branch_name(version)
-        clone_development(github_repo_for_user(user_name), version, verbose=verbose)
-        return (directory_name(version), None)
+        clone_development(github_repo_for_user(user_name), version, verbose=verbose, elassandra_version=elassandra_version)
+        return (elassandra_version_directory(version, elassandra_version), None)
 
     elif version.startswith('source:'):
         version = version.replace('source:', '')
@@ -77,8 +78,8 @@ def setup(version, verbose=False):
         alias = version.split(":")[1].split("/")[0]
         try:
             git_repo = CCM_CONFIG.get("aliases", alias)
-            clone_development(git_repo, version, verbose=verbose, alias=True)
-            return (directory_name(version), None)
+            clone_development(git_repo, version, verbose=verbose, alias=True, elassandra_version=elassandra_version)
+            return (elassandra_version_directory(version, elassandra_version), None)
         except ConfigParser.NoOptionError as e:
             common.warning("Unable to find alias {} in configuration file.".format(alias))
             raise e
@@ -100,7 +101,7 @@ def setup(version, verbose=False):
             if fallback:
                 common.warning("Downloading {} failed, due to {}. Trying to build from git instead.".format(version, e))
                 version = 'git:cassandra-{}'.format(version)
-                clone_development(GIT_REPO, version, verbose=verbose)
+                clone_development(GIT_REPO, version, verbose=verbose, elassandra_version=elassandra_version)
                 return (version_directory(version), None)
             else:
                 raise e
@@ -130,7 +131,16 @@ def validate(path):
         setup(version)
 
 
-def clone_development(git_repo, version, verbose=False, alias=False):
+def validate_elassandra_repo(install_dir, elassandra_repo_dir):
+    if install_dir.startswith(__get_dir()):
+        _, version = os.path.split(os.path.normcase(elassandra_repo_dir))
+        version = version.replace("COLON", ":")
+        _, elassandra_version = os.path.split(install_dir)
+        elassandra_version = elassandra_version[len("elassandra-"):]
+        return setup(version, elassandra_version=elassandra_version)
+
+
+def clone_development(git_repo, version, verbose=False, alias=False, elassandra_version=None):
     print_(git_repo, version)
     target_dir = directory_name(version)
     assert target_dir
@@ -143,7 +153,7 @@ def clone_development(git_repo, version, verbose=False, alias=False):
         git_repo_name = 'alias_{}'.format(version.split('/')[0].split(':')[-1])
         git_branch = version.split('/')[-1]
     else:
-        git_repo_name = 'apache'
+        git_repo_name = 'strapdata'
         git_branch = version.split(':', 1)[1]
     local_git_cache = os.path.join(__get_dir(), '_git_cache_' + git_repo_name)
 
@@ -154,14 +164,14 @@ def clone_development(git_repo, version, verbose=False, alias=False):
         # Checkout/fetch a local repository cache to reduce the number of
         # remote fetches we need to perform:
         if not os.path.exists(local_git_cache):
-            common.info("Cloning Cassandra...")
+            common.info("Cloning Elassandra...")
             process = subprocess.Popen(
                 ['git', 'clone', '--mirror', git_repo, local_git_cache],
                 cwd=__get_dir(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, _, _ = log_info(process, logger)
             assert out == 0, "Could not do a git clone"
         else:
-            common.info("Fetching Cassandra updates...")
+            common.info("Fetching Elassandra updates...")
             process = subprocess.Popen(
                 ['git', 'fetch', '-fup', 'origin', '+refs/*:refs/*'],
                 cwd=local_git_cache, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -171,7 +181,7 @@ def clone_development(git_repo, version, verbose=False, alias=False):
         # Checkout the version we want from the local cache:
         if not os.path.exists(target_dir):
             # development branch doesn't exist. Check it out.
-            common.info("Cloning Cassandra (from local cache)")
+            common.info("Cloning Elassandra (from local cache)")
 
             # git on cygwin appears to be adding `cwd` to the commands which is breaking clone
             if sys.platform == "cygwin":
@@ -221,7 +231,7 @@ def clone_development(git_repo, version, verbose=False, alias=False):
                                    branch=git_branch, lastlog=logfile
                                ))
             # now compile
-            compile_version(git_branch, target_dir, verbose)
+            compile_version(git_branch, target_dir, verbose, elassandra_version=elassandra_version)
         else:  # branch is already checked out. See if it is behind and recompile if needed.
             process = subprocess.Popen(
                 ['git', 'fetch', 'origin'],
@@ -240,7 +250,7 @@ def clone_development(git_repo, version, verbose=False, alias=False):
                 assert out == 0, "Could not run 'ant realclean'"
 
                 # now compile
-                compile_version(git_branch, target_dir, verbose)
+                compile_version(git_branch, target_dir, verbose, elassandra_version=elassandra_version)
             elif re.search('\[.*?(ahead|behind).*?\]', status.decode("utf-8")) is not None:  # status looks like  '## trunk...origin/trunk [ahead 1, behind 29]\n'
                  # If we have diverged in a way that fast-forward merging cannot solve, raise an exception so the cache is wiped
                 common.error("Could not ascertain branch status, please resolve manually.")
@@ -359,7 +369,46 @@ def download_version(version, url=None, verbose=False, binary=False):
         raise e
 
 
-def compile_version(version, target_dir, verbose=False):
+def compile_version(version, target_dir, verbose=False, elassandra_version=None):
+    return compile_version_elassandra(version, target_dir, verbose, elassandra_version)
+
+
+def compile_version_elassandra(version, target_dir, verbose=False, elassandra_version=None):
+    assert_jdk_valid_for_cassandra_version(get_version_from_build(target_dir))
+
+    # compiling cassandra and the stress tool
+    logfile = lastlogfilename()
+    logger = get_logger(logfile)
+
+    common.info("Compiling Elassandra {} ...".format(version))
+    logger.info("--- Elassandra Build -------------------\n")
+    try:
+        # Patch for pending Cassandra issue: https://issues.apache.org/jira/browse/CASSANDRA-5543
+        # Similar patch seen with buildbot
+        attempt = 0
+        ret_val = 1
+        if elassandra_version is None:
+            logger.info("elassandra version is not set, trying with 2.4.2")
+            elassandra_version = "2.4.2"
+        targz_file = "distribution/tar/target/releases/elassandra-%s.tar.gz" % elassandra_version
+        target_install_dir = os.path.join(target_dir, "elassandra-%s")
+        while attempt < 3 and ret_val is not 0:
+            if attempt > 0:
+                logger.info("\n\n`mvn package -DskipTests` failed. Retry #%s...\n\n" % attempt)
+            process = subprocess.Popen([platform_binary('mvn'), 'package', '-DskipTests'], cwd=target_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            ret_val, _, _ = log_info(process, logger)
+            if ret_val is 0:
+                process = subprocess.Popen([platform_binary('tar'), '-xzf', targz_file], cwd=target_dir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                ret_val, _, _ = log_info(process, logger)
+            attempt += 1
+        if ret_val is not 0:
+            raise CCMError('Error compiling Elassandra. See {logfile} or run '
+                           '"ccm showlastlog" for details'.format(logfile=logfile))
+    except OSError as e:
+        raise CCMError("Error compiling Elassandra. Is maven installed? See %s for details" % logfile)
+
+
+def compile_version_cassandra(version, target_dir, verbose=False):
     assert_jdk_valid_for_cassandra_version(get_version_from_build(target_dir))
 
     # compiling cassandra and the stress tool
@@ -413,6 +462,8 @@ def compile_version(version, target_dir, verbose=False):
                            "still be able to use ccm but not the stress related commands)" % str(e))
 
 
+
+
 def directory_name(version):
     version = version.replace(':', 'COLON')  # handle git branches like 'git:trunk'.
     version = version.replace('/', 'SLASH')  # handle git branches like 'github:mambocab/trunk'.
@@ -439,6 +490,19 @@ def version_directory(version):
             return None
     else:
         return None
+
+def elassandra_version_directory(version, elassandra_version):
+    dir = directory_name(version)
+    if os.path.exists(dir):
+        try:
+            validate_install_dir(os.path.join(dir, 'elassandra-%s' % elassandra_version))
+            return dir
+        except ArgumentError:
+            rmdirs(dir)
+            return None
+    else:
+        return None
+
 
 
 def clean_all():

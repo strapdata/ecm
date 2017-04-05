@@ -39,6 +39,10 @@ CASSANDRA_SH = "cassandra.in.sh"
 CONFIG_FILE = "config"
 CCM_CONFIG_DIR = "CCM_CONFIG_DIR"
 
+# Need a way to know the cassandra version of the elassandra used
+# Fallback to 3.0.10 temporarily
+CASSANDRA_VERSION_DEFAULT = "3.0.10"
+
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
                     level=logging.DEBUG
@@ -607,6 +611,37 @@ def copy_directory(src_dir, dst_dir):
 
 
 def get_version_from_build(install_dir=None, node_path=None):
+    return get_version_from_build_elassandra(install_dir, node_path)
+
+
+def get_version_from_build_elassandra(install_dir=None, node_path=None):
+    if install_dir is None and node_path is not None:
+        install_dir = get_install_dir_from_cluster_conf(node_path)
+    if install_dir is not None:
+        # Binary cassandra installs will have a 0.version.txt file
+        version_file = os.path.join(install_dir, '0.version.txt')
+        if os.path.exists(version_file):
+            with open(version_file) as f:
+                return LooseVersion(f.read().strip())
+        # For DSE look for a dse*.jar and extract the version number
+        dse_version = get_dse_version(install_dir)
+        if (dse_version is not None):
+            return LooseVersion(dse_version)
+
+        # we need a way to know the cassandra version...
+        return LooseVersion(CASSANDRA_VERSION_DEFAULT)
+
+        # Source cassandra installs we can read from build.xml
+        # build = os.path.join(install_dir, 'build.xml')
+        # with open(build) as f:
+        #     for line in f:
+        #         match = re.search('name="base\.version" value="([0-9.]+)[^"]*"', line)
+        #         if match:
+        #             return LooseVersion(match.group(1))
+    raise CCMError("Cannot find version")
+
+
+def get_version_from_build_cassandra(install_dir=None, node_path=None):
     if install_dir is None and node_path is not None:
         install_dir = get_install_dir_from_cluster_conf(node_path)
     if install_dir is not None:
@@ -627,6 +662,7 @@ def get_version_from_build(install_dir=None, node_path=None):
                 if match:
                     return LooseVersion(match.group(1))
     raise CCMError("Cannot find version")
+
 
 
 def get_dse_version(install_dir):

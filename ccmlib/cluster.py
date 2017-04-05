@@ -22,7 +22,8 @@ from six.moves import xrange
 
 class Cluster(object):
 
-    def __init__(self, path, name, partitioner=None, install_dir=None, create_directory=True, version=None, verbose=False, **kwargs):
+    def __init__(self, path, name, partitioner=None, install_dir=None, create_directory=True,
+                 version=None, verbose=False, elassandra_version=None, **kwargs):
         self.name = name
         self.nodes = {}
         self.seeds = []
@@ -38,6 +39,8 @@ class Cluster(object):
         self._debug = []
         self._trace = []
         self.data_dir_count = 1
+        self.elassandra_version = elassandra_version
+        self.elassandra_repo_dir = None
 
         if self.name.lower() == "current":
             raise RuntimeError("Cannot name a cluster 'current'.")
@@ -64,7 +67,13 @@ class Cluster(object):
                     self.__version = self.__get_version_from_build()
             else:
                 repo_dir, v = self.load_from_repository(version, verbose)
-                self.__install_dir = repo_dir
+                self.elassandra_repo_dir = repo_dir
+
+                # elassandra specific:
+                #   elassandra need an extra untar operation.
+                #   the root of the git repository is not the install dir.
+                #   the install dir has been unpacked in :repo_dir/elassandra-:version/.
+                self.__install_dir = os.path.join(repo_dir, "elassandra-%s" % self.elassandra_version)
                 self.__version = v if v is not None else self.__get_version_from_build()
 
             if create_directory:
@@ -76,7 +85,7 @@ class Cluster(object):
             raise
 
     def load_from_repository(self, version, verbose):
-        return repository.setup(version, verbose)
+        return repository.setup(version, verbose, elassandra_version=self.elassandra_version)
 
     def set_partitioner(self, partitioner):
         self.partitioner = partitioner
@@ -367,7 +376,7 @@ class Cluster(object):
 
     def start(self, no_wait=False, verbose=False, wait_for_binary_proto=True,
               wait_other_notice=True, jvm_args=None, profile_options=None,
-              quiet_start=False, allow_root=False):
+              quiet_start=False, allow_root=False, elastic_enabled=False):
         if jvm_args is None:
             jvm_args = []
 
@@ -389,7 +398,7 @@ class Cluster(object):
                 if os.path.exists(node.logfilename()):
                     mark = node.mark_log()
 
-                p = node.start(update_pid=False, jvm_args=jvm_args, profile_options=profile_options, verbose=verbose, quiet_start=quiet_start, allow_root=allow_root)
+                p = node.start(update_pid=False, jvm_args=jvm_args, profile_options=profile_options, verbose=verbose, quiet_start=quiet_start, allow_root=allow_root, elastic_enabled=elastic_enabled)
 
                 # Prior to JDK8, starting every node at once could lead to a
                 # nanotime collision where the RNG that generates a node's tokens
@@ -596,7 +605,8 @@ class Cluster(object):
             'log_level': self.__log_level,
             'use_vnodes': self.use_vnodes,
             'datadirs': self.data_dir_count,
-            'environment_variables': self._environment_variables
+            'environment_variables': self._environment_variables,
+            'elassandra_repo_dir': self.elassandra_repo_dir,
         }
         extension.append_to_cluster_config(self, config_map)
         with open(filename, 'w') as f:

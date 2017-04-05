@@ -560,6 +560,7 @@ class Node(object):
               use_jna=False,
               quiet_start=False,
               allow_root=False,
+              elastic_enabled=False,
               set_migration_task=True):
         """
         Start the node. Options includes:
@@ -625,6 +626,10 @@ class Node(object):
 
         pidfile = os.path.join(self.get_path(), 'cassandra.pid')
         args = [launch_bin]
+
+        # start elassandra with elasticsearch enabled
+        if elastic_enabled:
+            args.append("-e")
 
         self.add_custom_launch_arguments(args)
 

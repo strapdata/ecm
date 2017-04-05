@@ -98,6 +98,8 @@ class ClusterCreateCmd(Cmd):
                           help="Format to use when creating the ip of a node (supports enumerating ipv6-type addresses like fe80::%d%lo0)")
         parser.add_option('-s', "--start", action="store_true", dest="start_nodes",
                           help="Start nodes added through -s", default=False)
+        parser.add_option('-e', "--elastic", action="store_true", dest="elastic_enabled",
+                          help="Start elassandra with elasticsearch enabled. Must be paired with -s and -n", default=False)
         parser.add_option('-d', "--debug", action="store_true", dest="debug",
                           help="If -s is used, show the standard output when starting the nodes", default=False)
         parser.add_option('-b', "--binary-protocol", action="store_true", dest="binary_protocol",
@@ -157,11 +159,13 @@ class ClusterCreateCmd(Cmd):
                 """)
 
     def run(self):
+        elassandra_version = "2.4.2"
+
         try:
             if self.options.dse or (not self.options.version and common.isDse(self.options.install_dir)):
                 cluster = DseCluster(self.path, self.name, install_dir=self.options.install_dir, version=self.options.version, dse_username=self.options.dse_username, dse_password=self.options.dse_password, dse_credentials_file=self.options.dse_credentials_file, opscenter=self.options.opscenter, verbose=True)
             else:
-                cluster = Cluster(self.path, self.name, install_dir=self.options.install_dir, version=self.options.version, verbose=True)
+                cluster = Cluster(self.path, self.name, install_dir=self.options.install_dir, version=self.options.version, verbose=True, elassandra_version=elassandra_version)
         except OSError as e:
             import traceback
             print_('Cannot create cluster: %s\n%s' % (str(e), traceback.format_exc()), file=sys.stderr)
@@ -210,7 +214,7 @@ class ClusterCreateCmd(Cmd):
                         profile_options = {}
                         if self.options.profile_options:
                             profile_options['options'] = self.options.profile_options
-                    if cluster.start(verbose=self.options.debug, wait_for_binary_proto=self.options.binary_protocol, jvm_args=self.options.jvm_args, profile_options=profile_options, allow_root=self.options.allow_root) is None:
+                    if cluster.start(verbose=self.options.debug, wait_for_binary_proto=self.options.binary_protocol, jvm_args=self.options.jvm_args, profile_options=profile_options, allow_root=self.options.allow_root, elastic_enabled=self.options.elastic_enabled) is None:
                         details = ""
                         if not self.options.debug_log:
                             details = " (you can use --debug for more information)"
@@ -545,6 +549,8 @@ class ClusterStartCmd(Cmd):
         parser = self._get_default_parser(usage, self.description())
         parser.add_option('-v', '--verbose', action="store_true", dest="verbose",
                           help="Print standard output of cassandra process", default=False)
+        parser.add_option('-e', '--elastic', action="store_true", dest="elastic_enabled",
+                          help="Start elassandra with elastic enabled", default=False)
         parser.add_option('--no-wait', action="store_true", dest="no_wait",
                           help="Do not wait for cassandra node to be ready. Overrides all other wait options.", default=False)
         # This option (wait-other-notice) is now deprecated, as it was never respected
@@ -591,7 +597,8 @@ class ClusterStartCmd(Cmd):
                                   jvm_args=self.options.jvm_args,
                                   profile_options=profile_options,
                                   quiet_start=self.options.quiet_start,
-                                  allow_root=self.options.allow_root) is None:
+                                  allow_root=self.options.allow_root,
+                                  elastic_enabled=self.options.elastic_enabled) is None:
                 details = ""
                 if not self.options.verbose:
                     details = " (you can use --verbose for more information)"

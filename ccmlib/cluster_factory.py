@@ -23,7 +23,11 @@ class ClusterFactory():
             install_dir = None
             if 'install_dir' in data:
                 install_dir = data['install_dir']
-                repository.validate(install_dir)
+                if 'elassandra_repo_dir' not in data:
+                    repository.validate(install_dir)
+                else:
+                    repository.validate_elassandra_repo(install_dir, data['elassandra_repo_dir'])
+
             if install_dir is None and 'cassandra_dir' in data:
                 install_dir = data['cassandra_dir']
                 repository.validate(install_dir)
@@ -46,6 +50,9 @@ class ClusterFactory():
                 cluster.use_vnodes = data['use_vnodes']
             if 'datadirs' in data:
                 cluster.data_dir_count = int(data['datadirs'])
+            if 'elassandra_repo_dir' in data:
+                cluster.elassandra_repo_dir = data['elassandra_repo_dir']
+
             extension.load_from_cluster_config(cluster, data)
         except KeyError as k:
             raise common.LoadError("Error Loading " + filename + ", missing property:" + k)
