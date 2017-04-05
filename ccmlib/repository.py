@@ -36,7 +36,7 @@ ARCHIVE = "http://archive.apache.org/dist/cassandra"
 GIT_REPO="https://github.com/strapdata/elassandra.git"
 GITHUB_TAGS = "https://api.github.com/repos/apache/cassandra/git/refs/tags"
 CCM_CONFIG = ConfigParser.ConfigParser()
-CCM_CONFIG.read(os.path.join(os.path.expanduser("~"), ".ccm", "config"))
+CCM_CONFIG.read(os.path.join(os.path.expanduser("~"), ".ecm", "config"))
 
 
 def setup(version, verbose=False, elassandra_version=None):
