@@ -65,6 +65,7 @@ class Cluster(object):
                     else:
                         self.__install_dir = os.path.abspath(install_dir)
                     self.__version = self.__get_version_from_build()
+                    self.elassandra_version = self.__get_elassandra_version_from_build()
             else:
                 repo_dir, v = self.load_from_repository(version, verbose)
                 self.elassandra_repo_dir = repo_dir
@@ -73,6 +74,7 @@ class Cluster(object):
                 #   elassandra need an extra untar operation.
                 #   the root of the git repository is not the install dir.
                 #   the install dir has been unpacked in :repo_dir/elassandra-:version/.
+                self.elassandra_version = self.__get_elassandra_version_from_build()
                 self.__install_dir = os.path.join(repo_dir, "elassandra-%s" % self.elassandra_version)
                 self.__version = v if v is not None else self.__get_version_from_build()
 
@@ -588,7 +590,10 @@ class Cluster(object):
             node.update_logback(new_logback_config)
 
     def __get_version_from_build(self):
-        return common.get_version_from_build(self.get_install_dir())
+        return common.get_version_from_build(self.get_install_dir(), repo_dir=self.elassandra_repo_dir)
+
+    def __get_elassandra_version_from_build(self):
+        return common.get_elassandra_version_from_build(getattr(self, "_Cluster__install_dir", None), repo_dir=self.elassandra_repo_dir)
 
     def _update_config(self):
         node_list = [node.name for node in list(self.nodes.values())]
@@ -698,3 +703,4 @@ class Cluster(object):
 
     def wait_for_any_log(self, pattern, timeout, filename='system.log'):
         return common.wait_for_any_log(self.nodelist(), pattern, timeout, filename=filename)
+

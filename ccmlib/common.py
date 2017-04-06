@@ -39,10 +39,6 @@ CASSANDRA_SH = "cassandra.in.sh"
 CONFIG_FILE = "config"
 CCM_CONFIG_DIR = "CCM_CONFIG_DIR"
 
-# Need a way to know the cassandra version of the elassandra used
-# Fallback to 3.0.10 temporarily
-CASSANDRA_VERSION_DEFAULT = "3.0.10"
-
 logging.basicConfig(format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
                     level=logging.DEBUG
@@ -610,35 +606,59 @@ def copy_directory(src_dir, dst_dir):
             shutil.copy(filename, dst_dir)
 
 
-def get_version_from_build(install_dir=None, node_path=None):
-    return get_version_from_build_elassandra(install_dir, node_path)
+def get_elassandra_version_from_build(install_dir=None, repo_dir=None, node_path=None):
+    if repo_dir is not None:
+        import xml.etree.ElementTree as ET
+        tree = ET.parse(os.path.join(repo_dir, "pom.xml"))
+        return tree.getroot().find("./{http://maven.apache.org/POM/4.0.0}version").text
+
+    if install_dir is not None:
+        import glob
+        for jar_file in glob.glob(os.path.join(install_dir, "lib", "elassandra-*.jar")):
+            # other way to do using manifest could be: "unzip -q -c file.jar META-INF/MANIFEST.MF"
+            m = re.search("elassandra-(.+).jar", jar_file)
+            if m:
+                return m.group(1)
+        # if no elassandra jar found, try to guess from the install_dir name
+        m = re.search("elassandra-(.+)", os.path.basename(os.path.normpath(install_dir)))
+        if m:
+            return m.group(1)
+
+    raise CCMError("Cannot find elassandra version")
 
 
-def get_version_from_build_elassandra(install_dir=None, node_path=None):
+def get_version_from_build(install_dir=None, repo_dir=None, node_path=None):
+    return get_version_from_build_elassandra(install_dir, repo_dir=repo_dir, node_path=node_path)
+
+
+def get_version_from_build_elassandra(install_dir=None, node_path=None, repo_dir=None):
+
+    # fetch configuration from cluster.conf if necessary
     if install_dir is None and node_path is not None:
         install_dir = get_install_dir_from_cluster_conf(node_path)
-    if install_dir is not None:
-        # Binary cassandra installs will have a 0.version.txt file
-        version_file = os.path.join(install_dir, '0.version.txt')
-        if os.path.exists(version_file):
-            with open(version_file) as f:
-                return LooseVersion(f.read().strip())
-        # For DSE look for a dse*.jar and extract the version number
-        dse_version = get_dse_version(install_dir)
-        if (dse_version is not None):
-            return LooseVersion(dse_version)
+        repo_dir = get_elassandra_repo_dir_from_cluster_conf
 
-        # we need a way to know the cassandra version...
-        return LooseVersion(CASSANDRA_VERSION_DEFAULT)
+    # repo_dir is set... lookup in cassandra build.xml
+    if repo_dir is not None:
+        build = os.path.join(repo_dir, "core", "cassandra", "build.xml")
+        with open(build) as f:
+            for line in f:
+                match = re.search('name="base\.version" value="([0-9.]+)[^"]*"', line)
+                if match:
+                    return LooseVersion(match.group(1))
 
-        # Source cassandra installs we can read from build.xml
-        # build = os.path.join(install_dir, 'build.xml')
-        # with open(build) as f:
-        #     for line in f:
-        #         match = re.search('name="base\.version" value="([0-9.]+)[^"]*"', line)
-        #         if match:
-        #             return LooseVersion(match.group(1))
+    # if install_dir is set, lookup in cassandra-thrift manifest
+    elif install_dir is not None:
+        import glob
+        for jar_file in glob.glob(os.path.join(install_dir, "lib", "cassandra-thrift-*.jar")):
+            # other way to do using manifest could be: "unzip -q -c file.jar META-INF/MANIFEST.MF"
+            m = re.search("cassandra-thrift-(.+).jar", jar_file)
+            if m:
+                return m.group(1)
+
+    # otherwise raise an error
     raise CCMError("Cannot find version")
+
 
 
 def get_version_from_build_cassandra(install_dir=None, node_path=None):
@@ -689,6 +709,16 @@ def get_install_dir_from_cluster_conf(node_path):
     with open(file) as f:
         for line in f:
             match = re.search('install_dir: (.*?)$', line)
+            if match:
+                return match.group(1)
+    return None
+
+
+def get_elassandra_repo_dir_from_cluster_conf(node_path):
+    file = os.path.join(os.path.dirname(node_path), "cluster.conf")
+    with open(file) as f:
+        for line in f:
+            match = re.search('elassandra_repo_dir: (.*?)$', line)
             if match:
                 return match.group(1)
     return None
