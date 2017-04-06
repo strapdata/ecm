@@ -9,7 +9,8 @@ Requirements
 
 - python 2.7
 - pip
-- eventually maven, tar, cassandra-driver, cql...
+- jdk 1.8
+- eventually maven, cassandra-driver, cql...
 
 Installation from git repository
 ------------
