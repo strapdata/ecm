@@ -74,7 +74,8 @@ class Node(object):
     Provides interactions to a Cassandra node.
     """
 
-    def __init__(self, name, cluster, auto_bootstrap, thrift_interface, storage_interface, jmx_port, remote_debug_port, initial_token, save=True, binary_interface=None, byteman_port='0', environment_variables=None):
+    def __init__(self, name, cluster, auto_bootstrap, thrift_interface, storage_interface, jmx_port, remote_debug_port, initial_token,
+                 save=True, binary_interface=None, byteman_port='0', environment_variables=None, elastic_enabled=False):
         """
         Create a new Node.
           - name: the name for that node
@@ -109,6 +110,8 @@ class Node(object):
         self.__classes_log_level = {}
         self.__environment_variables = environment_variables or {}
         self.__conf_updated = False
+        self.elastic_enabled = elastic_enabled
+
         if save:
             self.import_config_files()
             self.import_bin_files()

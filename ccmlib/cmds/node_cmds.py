@@ -178,6 +178,8 @@ class NodeStartCmd(Cmd):
         parser = self._get_default_parser(usage, self.description())
         parser.add_option('-v', '--verbose', action="store_true", dest="verbose",
                           help="Print standard output of cassandra process", default=False)
+        parser.add_option('-e', '--elastic', action="store_true", dest="elastic_enabled",
+                          help="Start Elassandra with elasticsearch enabled", default=False)
         parser.add_option('--no-wait', action="store_true", dest="no_wait",
                           help="Do not wait for cassandra node to be ready", default=False)
         parser.add_option('--wait-other-notice', action="store_true", dest="deprecate",
@@ -209,7 +211,8 @@ class NodeStartCmd(Cmd):
                             replace_address=self.options.replace_address,
                             jvm_args=self.options.jvm_args,
                             quiet_start=self.options.quiet_start,
-                            allow_root=self.options.allow_root)
+                            allow_root=self.options.allow_root,
+                            elastic_enabled=self.options.elastic_enabled)
         except NodeError as e:
             print_(str(e), file=sys.stderr)
             print_("Standard error output is:", file=sys.stderr)
