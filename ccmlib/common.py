@@ -613,6 +613,12 @@ def get_elassandra_version_from_build(install_dir=None, repo_dir=None, node_path
         return tree.getroot().find("./{http://maven.apache.org/POM/4.0.0}version").text
 
     if install_dir is not None:
+        # try with 0.version.txt generated while downloading tarball
+        # Binary cassandra installs will have a 0.version.txt file
+        version_file = os.path.join(install_dir, '0.version.txt')
+        if os.path.exists(version_file):
+            with open(version_file) as f:
+                return f.read().strip()
         import glob
         for jar_file in glob.glob(os.path.join(install_dir, "lib", "elassandra-*.jar")):
             # other way to do using manifest could be: "unzip -q -c file.jar META-INF/MANIFEST.MF"
@@ -636,7 +642,7 @@ def get_version_from_build_elassandra(install_dir=None, node_path=None, repo_dir
     # fetch configuration from cluster.conf if necessary
     if install_dir is None and node_path is not None:
         install_dir = get_install_dir_from_cluster_conf(node_path)
-        repo_dir = get_elassandra_repo_dir_from_cluster_conf
+        repo_dir = get_elassandra_repo_dir_from_cluster_conf(node_path)
 
     # repo_dir is set... lookup in cassandra build.xml
     if repo_dir is not None:
@@ -654,7 +660,7 @@ def get_version_from_build_elassandra(install_dir=None, node_path=None, repo_dir
             # other way to do using manifest could be: "unzip -q -c file.jar META-INF/MANIFEST.MF"
             m = re.search("cassandra-thrift-(.+).jar", jar_file)
             if m:
-                return m.group(1)
+                return LooseVersion(m.group(1))
 
     # otherwise raise an error
     raise CCMError("Cannot find version")
@@ -720,7 +726,8 @@ def get_elassandra_repo_dir_from_cluster_conf(node_path):
         for line in f:
             match = re.search('elassandra_repo_dir: (.*?)$', line)
             if match:
-                return match.group(1)
+                value = match.group(1)
+                return value if value.lower() != "null" else None
     return None
 
 

@@ -67,16 +67,20 @@ class Cluster(object):
                     self.__version = self.__get_version_from_build()
                     self.elassandra_version = self.__get_elassandra_version_from_build()
             else:
-                repo_dir, v = self.load_from_repository(version, verbose)
-                self.elassandra_repo_dir = repo_dir
+                dir, v = self.load_from_repository(version, verbose)
 
-                # elassandra specific:
-                #   elassandra need an extra untar operation.
-                #   the root of the git repository is not the install dir.
-                #   the install dir has been unpacked in :repo_dir/elassandra-:version/.
-                self.elassandra_version = self.__get_elassandra_version_from_build()
-                self.__install_dir = os.path.join(repo_dir, "elassandra-%s" % self.elassandra_version)
-                self.__version = v if v is not None else self.__get_version_from_build()
+                if v is not None:
+                    # got elassandra from release distribution
+                    self.elassandra_repo_dir = None
+                    self.__install_dir = dir
+                    self.elassandra_version = v
+                    self.__version = self.__get_version_from_build()
+                else:
+                    # got from git repository
+                    self.elassandra_repo_dir = dir
+                    self.elassandra_version = self.__get_elassandra_version_from_build()
+                    self.__install_dir = os.path.join(dir, "elassandra-%s" % self.elassandra_version)
+                    self.__version = self.__get_version_from_build()
 
             if create_directory:
                 common.validate_install_dir(self.__install_dir)
@@ -427,7 +431,7 @@ class Cluster(object):
             if not node.is_running():
                 raise NodeError("Error starting {0}.".format(node.name), p)
 
-        if not no_wait:
+        if not no_wait and False: # skip
             if wait_other_notice:
                 for (node, _, mark), (other_node, _, _) in itertools.permutations(started, 2):
                     node.watch_log_for_alive(other_node, from_mark=mark)

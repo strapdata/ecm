@@ -784,6 +784,7 @@ class NodeSetdirCmd(Cmd):
         Cmd.validate(self, parser, options, args, node_name=True, load_cluster=True)
 
     def run(self):
+        print_("Warning: This CCM command is not well supported by ECM")
         try:
             self.node.set_install_dir(install_dir=self.options.install_dir, version=self.options.version, verbose=True)
         except common.ArgumentError as e:

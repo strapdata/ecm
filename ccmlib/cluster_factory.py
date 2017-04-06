@@ -23,7 +23,7 @@ class ClusterFactory():
             install_dir = None
             if 'install_dir' in data:
                 install_dir = data['install_dir']
-                if 'elassandra_repo_dir' not in data:
+                if 'elassandra_repo_dir' not in data or data['elassandra_repo_dir'] is None:
                     repository.validate(install_dir)
                 else:
                     repository.validate_elassandra_repo(install_dir, data['elassandra_repo_dir'])

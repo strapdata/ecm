@@ -159,13 +159,11 @@ class ClusterCreateCmd(Cmd):
                 """)
 
     def run(self):
-        elassandra_version = "2.4.2"
-
         try:
             if self.options.dse or (not self.options.version and common.isDse(self.options.install_dir)):
                 cluster = DseCluster(self.path, self.name, install_dir=self.options.install_dir, version=self.options.version, dse_username=self.options.dse_username, dse_password=self.options.dse_password, dse_credentials_file=self.options.dse_credentials_file, opscenter=self.options.opscenter, verbose=True)
             else:
-                cluster = Cluster(self.path, self.name, install_dir=self.options.install_dir, version=self.options.version, verbose=True, elassandra_version=elassandra_version)
+                cluster = Cluster(self.path, self.name, install_dir=self.options.install_dir, version=self.options.version, verbose=True, elassandra_version=None)
         except OSError as e:
             import traceback
             print_('Cannot create cluster: %s\n%s' % (str(e), traceback.format_exc()), file=sys.stderr)
@@ -509,6 +507,7 @@ class ClusterSetdirCmd(Cmd):
         Cmd.validate(self, parser, options, args, load_cluster=True)
 
     def run(self):
+        print_("Warning: This CCM command is not well supported by ECM")
         try:
             target = self.cluster
             if self.options.node:

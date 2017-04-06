@@ -31,7 +31,9 @@ from six.moves import urllib
 
 DSE_ARCHIVE = "http://downloads.datastax.com/enterprise/dse-%s-bin.tar.gz"
 OPSC_ARCHIVE = "http://downloads.datastax.com/community/opscenter-%s.tar.gz"
-ARCHIVE = "http://archive.apache.org/dist/cassandra"
+# ARCHIVE = "http://archive.apache.org/dist/cassandra"
+ARCHIVE="https://github.com/strapdata/elassandra/releases/download"
+
 #GIT_REPO = "http://git-wip-us.apache.org/repos/asf/cassandra.git"
 GIT_REPO="https://github.com/strapdata/elassandra.git"
 GITHUB_TAGS = "https://api.github.com/repos/apache/cassandra/git/refs/tags"
@@ -87,25 +89,28 @@ def setup(version, verbose=False, elassandra_version=None):
     if version in ('stable', 'oldstable', 'testing'):
         version = get_tagged_version_numbers(version)[0]
 
-    cdir = version_directory(version)
+    if elassandra_version is None:
+        elassandra_version = version
+
+    cdir = version_directory(elassandra_version)
     if cdir is None:
         try:
-            download_version(version, verbose=verbose, binary=binary)
-            cdir = version_directory(version)
+            download_version(elassandra_version, verbose=verbose, binary=binary)
+            cdir = version_directory(elassandra_version)
         except Exception as e:
             # If we failed to download from ARCHIVE,
             # then we build from source from the git repo,
             # as it is more reliable.
             # We don't do this if binary: or source: were
             # explicitly specified.
-            if fallback:
+            if fallback and False: # skip fallback, would not work with elassandra that way
                 common.warning("Downloading {} failed, due to {}. Trying to build from git instead.".format(version, e))
                 version = 'git:cassandra-{}'.format(version)
                 clone_development(GIT_REPO, version, verbose=verbose, elassandra_version=elassandra_version)
                 return (version_directory(version), None)
             else:
                 raise e
-    return (cdir, version)
+    return (cdir, elassandra_version)
 
 
 def setup_dse(version, username, password, verbose=False):
@@ -128,7 +133,9 @@ def setup_opscenter(opscenter, verbose=False):
 def validate(path):
     if path.startswith(__get_dir()):
         _, version = os.path.split(os.path.normpath(path))
-        setup(version)
+        version = version.replace("COLON", ":")
+        elassandra_version = None if version.startswith("git:") else version
+        setup(version, elassandra_version=elassandra_version)
 
 
 def validate_elassandra_repo(install_dir, elassandra_repo_dir):
@@ -320,15 +327,18 @@ def download_opscenter_version(version, target_version, verbose=False):
         raise ArgumentError("Unable to uncompress downloaded file: {}".format(str(e)))
 
 
-def download_version(version, url=None, verbose=False, binary=False):
+def download_version(version, url=None, verbose=False, binary=True):
     """Download, extract, and build Cassandra tarball.
 
+    CCM:
     if binary == True, download precompiled tarball, otherwise build from source tarball.
+    
+    ECM: ignore param, download binary all the time
     """
-    assert_jdk_valid_for_cassandra_version(version)
+    assert_jdk_valid_for_cassandra_version("3.0.10") # we do not know cassandra version yet
 
-    if binary:
-        u = "%s/%s/apache-cassandra-%s-bin.tar.gz" % (ARCHIVE, version.split('-')[0], version) if url is None else url
+    if binary or True: # force binary for elassandra
+        u = "%s/v%s/elassandra-%s.tar.gz" % (ARCHIVE, version, version.split('-')[0]) if url is None else url
     else:
         u = "%s/%s/apache-cassandra-%s-src.tar.gz" % (ARCHIVE, version.split('-')[0], version) if url is None else url
     _, target = tempfile.mkstemp(suffix=".tar.gz", prefix="ccm-")
@@ -344,7 +354,7 @@ def download_version(version, url=None, verbose=False, binary=False):
             rmdirs(target_dir)
         shutil.move(os.path.join(__get_dir(), dir), target_dir)
 
-        if binary:
+        if binary or True: # force binary
             # Binary installs don't have a build.xml that is needed
             # for pulling the version from. Write the version number
             # into a file to read later in common.get_version_from_build()
