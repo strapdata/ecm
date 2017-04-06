@@ -8,21 +8,25 @@ Requirements
 ------------
 
 - python 2.7
-- pip (to install python dependencies)
+- pip
+- eventually maven, tar, cassandra-driver, cql...
 
-Installation
+Installation from git repository
 ------------
-
+    
+    $ git clone git@github.com:strapdata/ecm.git
+    $ cd ecm
+    
 To install it globally on system, run:
 
-    $ sudo pip install
+    $ sudo pip install -r requirements.txt
     $ sudo ./setup.py install
     
 Or just try it locally with:
 
     $ virutalenv venv
     $ . venv/bin/activate
-    $ pip install
+    $ pip install -r requirements.txt
     
 Usage
 -----
@@ -52,7 +56,7 @@ To start a cluster with a tarball release downloaded from github:
     $ ecm create cluster-name -v 2.4.2-10 -n 3 -s -e
 
 ### Others commands
-
+(to install python dependencies)
 ```bash
     # see the cluster status
     $ ecm status
