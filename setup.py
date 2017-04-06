@@ -9,15 +9,15 @@ try:
 except ImportError:
     from distutils.core import setup
 
-ccmscript = 'ccm'
+ccmscript = 'ecm'
 if system() == "Windows":
-    copyfile('ccm', 'ccm.py')
-    ccmscript = 'ccm.py'
+    copyfile('ecm', 'ecm.py')
+    ccmscript = 'ecm.py'
 
 setup(
-    name='ccm',
+    name='ecm',
     version='2.6.1',
-    description='Cassandra Cluster Manager',
+    description='Elassandra Cluster Manager',
     long_description=open(abspath(join(dirname(__file__), 'README.md'))).read(),
     author='Sylvain Lebresne',
     author_email='sylvain@datastax.com',
