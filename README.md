@@ -4,6 +4,8 @@ ECM (Elassandra Cluster Manager)
 A script/library to create, launch and remove an Elassandra cluster on
 localhost.
 
+It's a fork of [ccm](https://github.com/pcmanus/ccm) modified to run Elassandra.
+
 Requirements
 ------------
 
@@ -57,7 +59,6 @@ To start a cluster with a tarball release downloaded from github:
     $ ecm create cluster-name -v 2.4.2-10 -n 3 -s -e
 
 ### Others commands
-(to install python dependencies)
 ```bash
     # see the cluster status
     $ ecm status
@@ -85,8 +86,10 @@ To start a cluster with a tarball release downloaded from github:
 
 Known issues
 ------------
+- Not every options from ccm work with ecm. Only a limited subset is used.
+  Support will be extended according to our needs.
 
-- ecm only works on localhost for now. If you want to create multiple
+- Ecm only works on localhost for now. If you want to create multiple
   node clusters, the simplest way is to use multiple loopback aliases. On
   modern linux distributions you probably don't need to do anything, but
   on Mac OS X, you will need to create the aliases with
