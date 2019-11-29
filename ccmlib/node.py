@@ -141,10 +141,11 @@ class Node(object):
                 self._cassandra_version = self.cluster.cassandra_version()
 
         if save:
+            self.import_all_tar_content()
             self.import_config_files()
             self.import_bin_files()
-            self.import_plugins_files()
-            self.import_modules_files()
+            #self.import_plugins_files()
+            #self.import_modules_files()
             if common.is_win():
                 self.__clean_bat()
 
@@ -282,10 +283,11 @@ class Node(object):
         if self.get_base_cassandra_version() >= 4.0:
             self.network_interfaces['thrift'] = None
 
+        self.import_all_tar_content()
         self.import_config_files()
         self.import_bin_files()
-        self.import_plugins_files()
-        self.import_modules_files()
+        #self.import_plugins_files()
+        #self.import_modules_files()
         self.__conf_updated = False
         return self
 
@@ -1444,6 +1446,11 @@ class Node(object):
     def import_modules_files(self):
         modules_dir = os.path.join(self.get_install_dir(), 'modules')
         shutil.copytree(modules_dir, self.get_modules_dir())
+        # common.add_exec_permission(plugins_dir, name)
+
+    def import_all_tar_content(self):
+        tar_content = self.get_install_dir()
+        shutil.copytree(tar_content, self.get_path())
         # common.add_exec_permission(plugins_dir, name)
 
 

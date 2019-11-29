@@ -269,7 +269,7 @@ def make_cassandra_env(install_dir, node_path, update_conf=True):
 
     if update_conf and not (is_win() and get_version_from_build(node_path=node_path) >= '2.1'):
         replacements = [
-            ('CASSANDRA_HOME=', '\tCASSANDRA_HOME=%s' % install_dir),
+            ('CASSANDRA_HOME=', '\tCASSANDRA_HOME=%s' % node_path),
             ('CASSANDRA_CONF=', '\tCASSANDRA_CONF=%s' % os.path.join(node_path, 'conf'))
         ]
         replaces_in_file(dst, replacements)
@@ -286,10 +286,10 @@ def make_cassandra_env(install_dir, node_path, update_conf=True):
 
     env = os.environ.copy()
     env['CASSANDRA_INCLUDE'] = os.path.join(dst)
-    env['MAX_HEAP_SIZE'] = os.environ.get('CCM_MAX_HEAP_SIZE', '500M')
-    env['HEAP_NEWSIZE'] = os.environ.get('CCM_HEAP_NEWSIZE', '50M')
-    env['CASSANDRA_HOME'] = install_dir
-    env['CASSANDRA_DATA'] = os.path.join(node_path, 'data0')
+    env['MAX_HEAP_SIZE'] = os.environ.get('CCM_MAX_HEAP_SIZE', '3000M')
+    env['HEAP_NEWSIZE'] = os.environ.get('CCM_HEAP_NEWSIZE', '856M')
+    env['CASSANDRA_HOME'] = node_path
+    #env['CASSANDRA_DATA'] = os.path.join(node_path, 'data0')
     env['CASSANDRA_CONF'] = os.path.join(node_path, 'conf')
 
     return env
