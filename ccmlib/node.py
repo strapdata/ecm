@@ -143,6 +143,8 @@ class Node(object):
         if save:
             self.import_config_files()
             self.import_bin_files()
+            self.import_plugins_files()
+            self.import_modules_files()
             if common.is_win():
                 self.__clean_bat()
 
@@ -204,6 +206,18 @@ class Node(object):
         Returns the path to the directory where Cassandra scripts are located
         """
         return os.path.join(self.get_path(), 'bin')
+
+    def get_plugins_dir(self):
+        """
+        Returns the path to the directory where Elastic plugins are located
+        """
+        return os.path.join(self.get_path(), 'plugins')
+
+    def get_modules_dir(self):
+        """
+        Returns the path to the directory where Elastic modules are located
+        """
+        return os.path.join(self.get_path(), 'modules')
 
     def get_tool(self, toolname):
         return common.join_bin(self.get_install_dir(), 'bin', toolname)
@@ -270,6 +284,8 @@ class Node(object):
 
         self.import_config_files()
         self.import_bin_files()
+        self.import_plugins_files()
+        self.import_modules_files()
         self.__conf_updated = False
         return self
 
@@ -663,7 +679,7 @@ class Node(object):
         args = [launch_bin]
 
         self.add_custom_launch_arguments(args)
-
+        args = args + ['-e']
         args = args + ['-p', pidfile, '-Dcassandra.join_ring=%s' % str(join_ring)]
 
         args.append('-Dcassandra.logdir=%s' % os.path.join(self.get_path(), 'logs'))
@@ -1420,6 +1436,17 @@ class Node(object):
                 shutil.copy(filename, self.get_bin_dir())
                 common.add_exec_permission(bin_dir, name)
 
+    def import_plugins_files(self):
+        plugins_dir = os.path.join(self.get_install_dir(), 'plugins')
+        shutil.copytree(plugins_dir, self.get_plugins_dir())
+                # common.add_exec_permission(plugins_dir, name)
+
+    def import_modules_files(self):
+        modules_dir = os.path.join(self.get_install_dir(), 'modules')
+        shutil.copytree(modules_dir, self.get_modules_dir())
+        # common.add_exec_permission(plugins_dir, name)
+
+
     def __clean_bat(self):
         # While the Windows specific changes to the batch files to get them to run are
         # fairly extensive and thus pretty brittle, all the changes are very unique to
@@ -1781,7 +1808,7 @@ class Node(object):
 
     def _get_directories(self):
         dirs = []
-        for i in ['commitlogs', 'saved_caches', 'logs', 'conf', 'bin', 'hints']:
+        for i in ['commitlogs', 'saved_caches', 'logs', 'conf', 'bin', 'hints']: # 'plugins' & 'modules' directories created by the copytree in import_xx method
             dirs.append(os.path.join(self.get_path(), i))
         for x in xrange(0, self.cluster.data_dir_count):
             dirs.append(os.path.join(self.get_path(), 'data{0}'.format(x)))

@@ -343,9 +343,17 @@ def download_version(version, url=None, verbose=False, binary=False):
         archive_url = "%s/%s/apache-cassandra-%s-bin.tar.gz" % (archive_url, version.split('-')[0], version) if url is None else url
     else:
         archive_url = "%s/%s/apache-cassandra-%s-src.tar.gz" % (archive_url, version.split('-')[0], version) if url is None else url
+
     _, target = tempfile.mkstemp(suffix=".tar.gz", prefix="ccm-")
+
     try:
-        __download(archive_url, target, show_progress=verbose)
+        if not version.startswith("file:"):
+            __download(archive_url, target, show_progress=verbose)
+        else:
+            target = version[5:]
+            version = extractVersionFromTar(version)
+            binary = True
+
         common.info("Extracting {} as version {} ...".format(target, version))
         tar = tarfile.open(target)
         dir = tar.next().name.split("/")[0]  # pylint: disable=all
@@ -380,6 +388,11 @@ def download_version(version, url=None, verbose=False, binary=False):
             raise CCMError("Building C* version {} failed. Attempted to delete {} but failed. This will need to be manually deleted".format(version, target_dir))
         raise e
 
+def extractVersionFromTar(version):
+    m = re.search('.*elassandra-(.*).tar.gz', version)
+    if m:
+        version = m.group(1)
+    return version
 
 def compile_version(version, target_dir, verbose=False):
     assert_jdk_valid_for_cassandra_version(get_version_from_build(target_dir))
@@ -556,6 +569,9 @@ def __get_dir():
     if not os.path.exists(repo):
         os.mkdir(repo)
     return repo
+
+def getBinaryInstallDir(version):
+    return __get_dir() + "/" + extractVersionFromTar(version)
 
 
 def lastlogfilename():

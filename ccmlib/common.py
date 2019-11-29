@@ -273,7 +273,7 @@ def make_cassandra_env(install_dir, node_path, update_conf=True):
             ('CASSANDRA_CONF=', '\tCASSANDRA_CONF=%s' % os.path.join(node_path, 'conf'))
         ]
         replaces_in_file(dst, replacements)
-
+#
     # If a cluster-wide cassandra.in.sh file exists in the parent
     # directory, append it to the node specific one:
     cluster_sh_file = os.path.join(node_path, os.path.pardir, 'cassandra.in.sh')
@@ -289,6 +289,7 @@ def make_cassandra_env(install_dir, node_path, update_conf=True):
     env['MAX_HEAP_SIZE'] = os.environ.get('CCM_MAX_HEAP_SIZE', '500M')
     env['HEAP_NEWSIZE'] = os.environ.get('CCM_HEAP_NEWSIZE', '50M')
     env['CASSANDRA_HOME'] = install_dir
+    env['CASSANDRA_DATA'] = os.path.join(node_path, 'data0')
     env['CASSANDRA_CONF'] = os.path.join(node_path, 'conf')
 
     return env

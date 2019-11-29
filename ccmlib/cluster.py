@@ -65,7 +65,9 @@ class Cluster(object):
             else:
                 repo_dir, v = self.load_from_repository(version, verbose)
                 self.__install_dir = repo_dir
-                self.__version = v
+                self.__version = repository.extractVersionFromTar(version)
+                if version.startswith("file:"):
+                    self.__install_dir = repository.getBinaryInstallDir(version)
 
             if self.__version is None:
                 if derived_cassandra_version is not None:
