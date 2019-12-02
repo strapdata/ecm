@@ -147,7 +147,7 @@ class ClusterCreateCmd(Cmd):
             cluster.set_configuration_options({'start_native_transport': True})
 
         if cluster.cassandra_version() >= "1.2" and self.options.vnodes:
-            cluster.set_configuration_options({'num_tokens': 256})
+            cluster.set_configuration_options({'num_tokens': 4})
 
         if not self.options.no_switch:
             common.switch_cluster(self.path, self.name)
@@ -287,7 +287,7 @@ class ClusterPopulateCmd(Cmd):
     def run(self):
         try:
             if self.cluster.cassandra_version() >= "1.2" and self.options.vnodes:
-                self.cluster.set_configuration_options({'num_tokens': 256})
+                self.cluster.set_configuration_options({'num_tokens': 4})
 
             if not (self.options.ipprefix or self.options.ipformat):
                 self.options.ipformat = '127.0.0.%d'
