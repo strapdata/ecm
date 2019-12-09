@@ -1,4 +1,6 @@
 language: python
+jdk:
+- openjdk8
 python:
   - "2.7.13"
   - "3.4.5"
