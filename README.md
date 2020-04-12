@@ -1,11 +1,12 @@
-CCM (Cassandra Cluster Manager)
+ECM (Elassandra Cluster Manager)
 ====================================================
 
-A script/library to create, launch and remove an Apache Cassandra cluster on
-localhost.
+A script/library to create, launch and remove an Elassandra cluster on
+localhost. It's a fork of CCM (Cassandra Cluster Manager) https://github.com/riptano/ccm
+developed by Sylvain Lebresne, modified to run with Elassandra.
 
-The goal of ccm and ccmlib is to make it easy to create, manage and destroy a
-small Cassandra cluster on a local box. It is meant for testing a Cassandra cluster.
+The goal of ecm and ccmlib is to make it easy to create, manage and destroy a
+small Cassandra cluster on a local box. It is meant for testing a Elassandra cluster.
 
 
 Requirements
