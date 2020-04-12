@@ -84,7 +84,7 @@ class ClusterCreateCmd(Cmd):
         (['-b', "--binary-protocol"], {'action': "store_true", 'dest': "binary_protocol", 'help': "Enable the binary protocol (starting from C* 1.2.5 the binary protocol is started by default and this option is a no-op)", 'default': False}),
         (['-D', "--debug-log"], {'action': "store_true", 'dest': "debug_log", 'help': "With -n, sets debug logging on the new nodes", 'default': False}),
         (['-T', "--trace-log"], {'action': "store_true", 'dest': "trace_log", 'help': "With -n, sets trace logging on the new nodes", 'default': False}),
-        (["--vnodes"], {'action': "store_true", 'dest': "vnodes", 'help': "Use vnodes (256 tokens). Must be paired with -n.", 'default': False}),
+        (["--vnodes"], {'action': "store_true", 'dest': "vnodes", 'help': "Use vnodes (16 tokens). Must be paired with -n.", 'default': False}),
         (['--jvm_arg'], {'action': "append", 'dest': "jvm_args", 'help': "Specify a JVM argument", 'default': []}),
         (['--profile'], {'action': "store_true", 'dest': "profile", 'help': "Start the nodes with yourkit agent (only valid with -s)", 'default': False}),
         (['--profile-opts'], {'type': "string", 'action': "store", 'dest': "profile_options", 'help': "Yourkit options when profiling", 'default': None}),
@@ -147,7 +147,7 @@ class ClusterCreateCmd(Cmd):
             cluster.set_configuration_options({'start_native_transport': True})
 
         if cluster.cassandra_version() >= "1.2" and self.options.vnodes:
-            cluster.set_configuration_options({'num_tokens': 4})
+            cluster.set_configuration_options({'num_tokens': 16})
 
         if not self.options.no_switch:
             common.switch_cluster(self.path, self.name)
