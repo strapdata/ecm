@@ -204,6 +204,7 @@ class ClusterAddCmd(Cmd):
         (['-r', '--remote-debug-port'], {'type': "string", 'dest': "remote_debug_port", 'help': "Remote Debugging Port for the node", 'default': "2000"}),
         (['-n', '--token'], {'type': "string", 'dest': "initial_token", 'help': "Initial token for the node", 'default': None}),
         (['-d', '--data-center'], {'type': "string", 'dest': "data_center", 'help': "Datacenter name this node is part of", 'default': None}),
+        (['-k', '--rack'], {'type': "string", 'dest': "rack", 'help': "Rack name this node is part of", 'default': 'r1'}),
         (['--dse'], {'action': "store_true", 'dest': "dse_node", 'help': "Add node to DSE Cluster", 'default': False}),
     ]
     descr_text = "Add a new node to the current cluster"
@@ -253,7 +254,7 @@ class ClusterAddCmd(Cmd):
                 node = DseNode(self.name, self.cluster, self.options.bootstrap, self.thrift, self.storage, self.jmx_port, self.remote_debug_port, self.initial_token, binary_interface=self.binary)
             else:
                 node = Node(self.name, self.cluster, self.options.bootstrap, self.thrift, self.storage, self.jmx_port, self.remote_debug_port, self.initial_token, binary_interface=self.binary)
-            self.cluster.add(node, self.options.is_seed, self.options.data_center)
+            self.cluster.add(node, self.options.is_seed, self.options.data_center, self.options.rack)
         except common.ArgumentError as e:
             print_(str(e), file=sys.stderr)
             exit(1)
@@ -867,4 +868,3 @@ class ClusterEnableaossCmd(Cmd):
         except Exception as e:
             print_(str(e), file=sys.stderr)
             exit(1)
-

@@ -215,7 +215,7 @@ class Cluster(object):
     def cassandra_version(self):
         return self.version()
 
-    def add(self, node, is_seed, data_center=None):
+    def add(self, node, is_seed, data_center=None, rack=None):
         if node.name in self.nodes:
             raise common.ArgumentError('Cannot create existing node %s' % node.name)
         self.nodes[node.name] = node
@@ -223,6 +223,7 @@ class Cluster(object):
             self.seeds.append(node)
         self._update_config()
         node.data_center = data_center
+        node.rack = rack
         node.set_log_level(self.__log_level)
 
         for debug_class in self._debug:
@@ -620,17 +621,9 @@ class Cluster(object):
             node._update_pid(p)
 
     def __update_topology_files(self):
-        dcs = [('default', 'dc1')]
         for node in self.nodelist():
-            if node.data_center is not None:
-                dcs.append((node.address(), node.data_center))
-
-        content = ""
-        for k, v in dcs:
-            content = "%s%s=%s:r1\n" % (content, k, v)
-
-        for node in self.nodelist():
-            topology_file = os.path.join(node.get_conf_dir(), 'cassandra-topology.properties')
+            content = "dc=%s\nrack=%s\n" % (node.data_center, node.rack)
+            topology_file = os.path.join(node.get_conf_dir(), 'cassandra-rackdc.properties')
             with open(topology_file, 'w') as f:
                 f.write(content)
 

@@ -123,6 +123,7 @@ class Node(object):
         self.initial_token = initial_token
         self.pid = None
         self.data_center = None
+        self.rack = 'r1'
         self.workloads = []
         self._dse_config_options = {}
         self.__config_options = {}
@@ -190,6 +191,8 @@ class Node(object):
                 node.__environment_variables = data['environment_variables']
             if 'data_center' in data:
                 node.data_center = data['data_center']
+            if 'rack' in data:
+                node.rack = data['rack']
             if 'workloads' in data:
                 node.workloads = data['workloads']
             return node
@@ -1542,6 +1545,8 @@ class Node(object):
             values['byteman_port'] = self.byteman_port
         if self.data_center:
             values['data_center'] = self.data_center
+        if self.rack:
+            values['rack'] = self.rack
         if self.workloads is not None:
             values['workloads'] = self.workloads
         with open(filename, 'w') as f:
