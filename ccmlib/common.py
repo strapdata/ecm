@@ -286,8 +286,8 @@ def make_cassandra_env(install_dir, node_path, update_conf=True):
 
     env = os.environ.copy()
     env['CASSANDRA_INCLUDE'] = os.path.join(dst)
-    env['MAX_HEAP_SIZE'] = os.environ.get('CCM_MAX_HEAP_SIZE', '3000M')
-    env['HEAP_NEWSIZE'] = os.environ.get('CCM_HEAP_NEWSIZE', '856M')
+    env['MAX_HEAP_SIZE'] = os.environ.get('CCM_MAX_HEAP_SIZE', '1200M')
+    env['HEAP_NEWSIZE'] = os.environ.get('CCM_HEAP_NEWSIZE', '120M')
     env['CASSANDRA_HOME'] = node_path
     #env['CASSANDRA_DATA'] = os.path.join(node_path, 'data0')
     env['CASSANDRA_CONF'] = os.path.join(node_path, 'conf')
@@ -673,7 +673,7 @@ def get_dse_cassandra_version(install_dir):
     if match:
         return LooseVersion(match.group(1))
 
-    raise ArgumentError("Unable to determine Cassandra version in: %s.\n\tstdout: '%s'\n\tstderr: '%s'" 
+    raise ArgumentError("Unable to determine Cassandra version in: %s.\n\tstdout: '%s'\n\tstderr: '%s'"
       % (install_dir, output, stderr))
 
 def get_install_dir_from_cluster_conf(node_path):
