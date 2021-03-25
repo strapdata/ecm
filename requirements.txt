@@ -2,5 +2,5 @@ appdirs==1.4.3
 packaging==16.8
 psutil==5.2.1
 pyparsing==2.2.0
-PyYAML==3.12
+PyYAML==5.4
 six==1.10.0
